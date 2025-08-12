@@ -110,7 +110,16 @@ async def home():
         "example": {
             "url": "https://www.youtube.com/watch?v=VIDEO_ID",
             "type": "video"  # أو "audio"
-        }
+        },
+        "supported_sites": [
+            "✅ YouTube - يعمل ممتاز",
+            "✅ TikTok - يعمل جيد",
+            "✅ Twitter/X - يعمل جيد", 
+            "⚠️ Instagram - يحتاج تسجيل دخول أحياناً",
+            "✅ Facebook - يعمل معظم الوقت",
+            "✅ Vimeo - يعمل ممتاز"
+        ],
+        "tips": "💡 لأفضل النتائج، استخدم YouTube أو TikTok"
     }
 
 
@@ -158,16 +167,50 @@ async def download_media(request: DownloadRequest, background_tasks: BackgroundT
         
         # 📥 تحميل الملف
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            # 📊 جلب معلومات الفيديو أولاً
-            info = ydl.extract_info(request.url, download=False)
-            title = info.get('title', 'تحميل')
-            duration = info.get('duration', 0)
-            
-            print(f"📺 العنوان: {title}")
-            print(f"⏱️ المدة: {duration} ثانية")
-            
-            # 📥 تحميل الملف الفعلي
-            ydl.download([request.url])
+            try:
+                # 📊 جلب معلومات الفيديو أولاً
+                info = ydl.extract_info(request.url, download=False)
+                title = info.get('title', 'تحميل')
+                duration = info.get('duration', 0)
+                
+                print(f"📺 العنوان: {title}")
+                print(f"⏱️ المدة: {duration} ثانية")
+                
+                # 📥 تحميل الملف الفعلي
+                ydl.download([request.url])
+                
+            except Exception as ydl_error:
+                error_msg = str(ydl_error)
+                print(f"❌ خطأ yt-dlp: {error_msg}")
+                
+                # رسائل خطأ مخصصة حسب المنصة
+                if "Instagram" in error_msg:
+                    if "login required" in error_msg or "rate-limit" in error_msg:
+                        raise HTTPException(
+                            status_code=400,
+                            detail="❌ Instagram يتطلب تسجيل دخول لتحميل هذا المحتوى. جرب رابط من YouTube أو TikTok بدلاً من ذلك."
+                        )
+                elif "age-gated" in error_msg:
+                    raise HTTPException(
+                        status_code=400,
+                        detail="❌ هذا المحتوى مقيد العمر ولا يمكن تحميله."
+                    )
+                elif "Private video" in error_msg:
+                    raise HTTPException(
+                        status_code=400,
+                        detail="❌ هذا الفيديو خاص ولا يمكن تحميله."
+                    )
+                elif "Video unavailable" in error_msg:
+                    raise HTTPException(
+                        status_code=400,
+                        detail="❌ الفيديو غير متوفر أو تم حذفه."
+                    )
+                else:
+                    # خطأ عام
+                    raise HTTPException(
+                        status_code=400,
+                        detail=f"❌ لا يمكن تحميل هذا الرابط: {error_msg[:100]}..."
+                    )
         
         # 🔍 البحث عن الملف المُحمّل
         downloaded_files = list(TEMP_DIR.glob(f"download_{unique_id}.*"))
