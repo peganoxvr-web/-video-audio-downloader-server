@@ -1,0 +1,16 @@
+# متطلبات سيرفر تحميل الفيديوهات والصوتيات
+# Server requirements for video/audio download API
+
+# FastAPI والخادم - Railway compatible versions
+fastapi>=0.104.1
+uvicorn[standard]>=0.24.0
+
+# تحميل الفيديوهات والصوتيات
+yt-dlp>=2023.11.16
+
+# معالجة الطلبات والملفات
+python-multipart>=0.0.6
+aiofiles>=23.2.1
+
+# أدوات إضافية
+pydantic>=2.5.0

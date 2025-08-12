@@ -1,0 +1,6 @@
+# متطلبات مبسطة للسيرفر
+fastapi
+uvicorn[standard]
+yt-dlp
+python-multipart
+aiofiles
